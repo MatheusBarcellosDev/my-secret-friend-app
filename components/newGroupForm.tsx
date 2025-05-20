@@ -1,7 +1,8 @@
 'use client';
 
 import { UserLogged } from '@/app/app/grupos/novo/page';
-import { useState } from 'react';
+import { toast } from 'sonner';
+import { useActionState, useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -13,8 +14,9 @@ import {
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Mail, Trash2 } from 'lucide-react';
+import { Loader, Mail, Trash2 } from 'lucide-react';
 import { Separator } from './ui/separator';
+import { createGroup, CreateGroupState } from '@/app/app/grupos/novo/actions';
 
 type Props = {
   loggedUser: UserLogged;
@@ -30,6 +32,14 @@ export default function NewGroupForm({ loggedUser }: Props) {
     { name: '', email: loggedUser.email },
   ]);
   const [groupName, setGroupName] = useState<string>('');
+
+  const [state, formAction, pending] = useActionState<
+    CreateGroupState,
+    FormData
+  >(createGroup, {
+    success: null,
+    message: '',
+  });
 
   function updateParticipant(
     index: number,
@@ -54,6 +64,15 @@ export default function NewGroupForm({ loggedUser }: Props) {
     setParticipants((prev) => [...prev, { name: '', email: '' }]);
   }
 
+  useEffect(() => {
+    if (state.success === true) {
+      toast.success('Grupo criado com sucesso!');
+    }
+    if (state.success === false) {
+      toast.error(state.message || 'Erro ao criar grupo');
+    }
+  }, [state]);
+
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
@@ -62,7 +81,7 @@ export default function NewGroupForm({ loggedUser }: Props) {
           Convide seus amigos para o amigo secreto
         </CardDescription>
       </CardHeader>
-      <form action={() => {}}>
+      <form action={formAction}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="group-name">Nome do grupo</Label>
@@ -143,6 +162,7 @@ export default function NewGroupForm({ loggedUser }: Props) {
           <Button type="submit" className="w-full md:w-auto">
             <Mail className="h-4 w-4 mr-2" />
             Criar grupo e enviar convite
+            {pending && <Loader className="animate-spin h-4 w-4 ml-2" />}
           </Button>
         </CardFooter>
       </form>
